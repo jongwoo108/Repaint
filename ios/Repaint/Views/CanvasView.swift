@@ -198,6 +198,7 @@ struct CanvasView: View {
     @State private var selectedHex: String = ""
     @State private var showBrushSettings = false
     @State private var currentBrushType: String = "watercolor"
+    @State private var showProgressPanel = false
 
     var body: some View {
         ZStack {
@@ -281,8 +282,28 @@ struct CanvasView: View {
             }
         }
         .ignoresSafeArea()
+        .overlay(alignment: .top) {
+            // 진행률 패널 (드롭다운)
+            if showProgressPanel {
+                progressPanel
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(10)
+            }
+        }
         .overlay {
-            if session.isSessionComplete { CompletionOverlay() }
+            // 70% 도달 전환 프롬프트
+            if session.showAdvancePrompt, let guide = session.currentRegionGuide {
+                AdvancePromptView(
+                    regionLabel: guide.region.label,
+                    coverage: session.regionProgress[guide.id] ?? 0.7,
+                    onContinue: { session.dismissAdvancePrompt() },
+                    onAdvance: { session.confirmAdvance() }
+                )
+                .zIndex(20)
+            }
+        }
+        .overlay {
+            if session.isSessionComplete { CompletionOverlay().zIndex(30) }
         }
         .onAppear {
             if let guide = session.currentRegionGuide {
@@ -319,11 +340,17 @@ struct CanvasView: View {
 
             Spacer()
 
-            // 현재 region 진행률 링
+            // 현재 region 진행률 링 (탭 → 진행률 패널)
             if let guide = session.currentRegionGuide {
                 let progress = session.regionProgress[guide.id] ?? 0
-                RegionProgressRing(progress: progress)
-                    .padding(.trailing, 10)
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        showProgressPanel.toggle()
+                    }
+                } label: {
+                    RegionProgressRing(progress: progress)
+                }
+                .padding(.trailing, 8)
             }
 
             // 참고 사진 토글
@@ -347,4 +374,20 @@ struct CanvasView: View {
             )
         )
     }
+
+    private var progressPanel: some View {
+        PaintingProgressView(
+            guides: session.paintingGuide.regionGuides,
+            progress: session.regionProgress,
+            completedIds: completedIds,
+            currentId: session.currentRegionGuide?.id
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 70)
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3)) { showProgressPanel = false }
+        }
+    }
+
+    private var completedIds: Set<String> { session.completedRegionIds }
 }
