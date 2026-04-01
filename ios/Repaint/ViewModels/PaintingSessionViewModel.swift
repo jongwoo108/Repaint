@@ -10,6 +10,7 @@ class PaintingSessionViewModel: ObservableObject {
     @Published var currentPalette: [PaletteColor] = []
     @Published var currentColor: UIColor = .black
     @Published var currentBrush: BrushPreset?
+    @Published var currentInkWidth: CGFloat = 15
     @Published var currentStrokeHints: StrokeHints?
     @Published var regionProgress: [String: Float] = [:]
     @Published var canvasView = PKCanvasView()
@@ -40,6 +41,7 @@ class PaintingSessionViewModel: ObservableObject {
                 currentPalette = next.recipe.palette
                 currentColor = next.recipe.palette.first?.uiColor ?? .black
                 currentBrush = next.recipe.brush
+                currentInkWidth = CGFloat(next.recipe.brush.sizeRange.min)
                 currentStrokeHints = next.strokeHints
                 return
             }

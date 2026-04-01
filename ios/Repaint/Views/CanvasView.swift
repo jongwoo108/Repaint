@@ -196,6 +196,8 @@ private struct CompletionOverlay: View {
 struct CanvasView: View {
     @ObservedObject var session: PaintingSessionViewModel
     @State private var selectedHex: String = ""
+    @State private var showBrushSettings = false
+    @State private var currentBrushType: String = "watercolor"
 
     var body: some View {
         ZStack {
@@ -214,9 +216,9 @@ struct CanvasView: View {
             // Layer 2: PencilKit 캔버스
             PencilCanvasRepresentable(
                 canvasView: $session.canvasView,
-                inkType: session.pkInkType,
+                inkType: pkInkType(for: currentBrushType),
                 inkColor: session.currentColor,
-                inkWidth: inkWidth,
+                inkWidth: session.currentInkWidth,
                 onDrawingChanged: { session.updateProgress() }
             )
 
@@ -240,33 +242,75 @@ struct CanvasView: View {
                     )
                 }
             }
+
+            // Layer 5: 브러시 설정 플로팅 패널 (우측)
+            if let brush = session.currentBrush {
+                HStack {
+                    Spacer()
+                    VStack {
+                        // 브러시 설정 토글 버튼
+                        Button {
+                            withAnimation(.spring(response: 0.3)) {
+                                showBrushSettings.toggle()
+                            }
+                        } label: {
+                            Image(systemName: "paintbrush.pointed.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(showBrushSettings ? .yellow : .white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.4))
+                                .clipShape(Circle())
+                        }
+                        .padding(.top, 80)
+
+                        if showBrushSettings {
+                            BrushSettingsView(
+                                currentBrushType: $currentBrushType,
+                                currentInkWidth: $session.currentInkWidth,
+                                sizeRange: brush.sizeRange,
+                                recommendedType: brush.type,
+                                opacity: brush.opacity
+                            )
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.trailing, 12)
+                }
+            }
         }
         .ignoresSafeArea()
         .overlay {
             if session.isSessionComplete { CompletionOverlay() }
         }
         .onAppear {
-            // 첫 region의 기본 색상 초기화
-            if let first = session.currentRegionGuide?.recipe.palette.first {
-                selectedHex = first.hex
+            if let guide = session.currentRegionGuide {
+                selectedHex = guide.recipe.palette.first?.hex ?? ""
+                currentBrushType = guide.recipe.brush.type
             }
         }
         .onChange(of: session.currentRegionGuide?.id) { _ in
-            if let first = session.currentRegionGuide?.recipe.palette.first {
-                selectedHex = first.hex
+            if let guide = session.currentRegionGuide {
+                selectedHex = guide.recipe.palette.first?.hex ?? ""
+                currentBrushType = guide.recipe.brush.type  // 레시피 추천 타입으로 자동 전환
             }
         }
     }
 
     // MARK: Private
 
+    private func pkInkType(for type: String) -> PKInkingTool.InkType {
+        switch type {
+        case "watercolor": return .watercolor
+        case "marker":     return .marker
+        default:           return .pen
+        }
+    }
+
     private var canvasBackground: some View {
         let hex = session.paintingGuide.styleRecipe.canvasSettings.backgroundColor
         return (Color(hex: hex) ?? Color(red: 0.96, green: 0.94, blue: 0.91))
-    }
-
-    private var inkWidth: CGFloat {
-        CGFloat(session.currentBrush?.sizeRange.min ?? 15)
     }
 
     private var topBar: some View {
