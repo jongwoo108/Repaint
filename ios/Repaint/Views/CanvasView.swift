@@ -172,20 +172,37 @@ private struct RegionProgressRing: View {
 // MARK: - Session Complete Overlay
 
 private struct CompletionOverlay: View {
+    let onCompare: () -> Void
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.65).ignoresSafeArea()
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 64))
                     .foregroundColor(.yellow)
-                Text("완성!")
-                    .font(.largeTitle.bold())
-                    .foregroundColor(.white)
-                Text("모네 인상주의 스타일로\n그림이 완성되었습니다.")
-                    .font(.title3)
-                    .foregroundColor(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
+                VStack(spacing: 8) {
+                    Text("완성!")
+                        .font(.largeTitle.bold())
+                        .foregroundColor(.white)
+                    Text("모네 인상주의 스타일로\n그림이 완성되었습니다.")
+                        .font(.title3)
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                }
+                Button(action: onCompare) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "rectangle.lefthalf.inset.filled.arrow.left")
+                        Text("작품 비교하기")
+                    }
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(Color.yellow)
+                    .cornerRadius(16)
+                }
+                .padding(.top, 4)
             }
         }
     }
@@ -199,6 +216,8 @@ struct CanvasView: View {
     @State private var showBrushSettings = false
     @State private var currentBrushType: String = "watercolor"
     @State private var showProgressPanel = false
+    @State private var showComparison = false
+    @StateObject private var gallery = GalleryViewModel()
 
     var body: some View {
         ZStack {
@@ -303,7 +322,25 @@ struct CanvasView: View {
             }
         }
         .overlay {
-            if session.isSessionComplete { CompletionOverlay().zIndex(30) }
+            if session.isSessionComplete {
+                CompletionOverlay(onCompare: { showComparison = true })
+                    .zIndex(30)
+            }
+        }
+        .fullScreenCover(isPresented: $showComparison) {
+            let canvasSize = session.canvasView.bounds.size
+            let bgHex = session.paintingGuide.styleRecipe.canvasSettings.backgroundColor
+            let bgColor = UIColor(Color(hex: bgHex) ?? Color(red: 0.96, green: 0.94, blue: 0.91))
+            let painted = gallery.renderFinalPainting(
+                drawing: session.canvasView.drawing,
+                size: canvasSize.width > 0 ? canvasSize : CGSize(width: 1024, height: 1366),
+                backgroundColor: bgColor
+            )
+            ComparisonView(
+                originalImage: session.originalPhoto,
+                paintedImage: painted,
+                onDismiss: { showComparison = false }
+            )
         }
         .onAppear {
             if let guide = session.currentRegionGuide {
