@@ -27,43 +27,7 @@ struct PencilCanvasRepresentable: UIViewRepresentable {
     final class Coordinator: NSObject, PKCanvasViewDelegate {
         let onDrawingChanged: () -> Void
         init(onDrawingChanged: @escaping () -> Void) { self.onDrawingChanged = onDrawingChanged }
-
-        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            onDrawingChanged()
-        }
-    }
-}
-
-// MARK: - Region Mask Overlay
-
-private struct RegionMaskOverlay: View {
-    let regions: [Region]
-    let activeRegionId: String?
-    let imageSize: CGSize  // 원본 사진 크기 — path 좌표계 기준
-
-    var body: some View {
-        Canvas { context, viewSize in
-            // cgPath는 원본 이미지 좌표(points)로 되어 있으므로
-            // view 크기에 맞게 스케일 변환 필요
-            let scaleX = viewSize.width / imageSize.width
-            let scaleY = viewSize.height / imageSize.height
-            let transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
-
-            for region in regions {
-                guard let cgPath = region.cgPath else { continue }
-                let scaledPath = Path(cgPath).applying(transform)
-
-                if region.id == activeRegionId {
-                    // 활성 영역: 노란 테두리 + 연한 하이라이트
-                    context.stroke(scaledPath, with: .color(.white.opacity(0.9)), lineWidth: 2.5)
-                    context.fill(scaledPath, with: .color(.yellow.opacity(0.08)))
-                } else {
-                    // 비활성 영역: 어둡게 dimming
-                    context.fill(scaledPath, with: .color(.black.opacity(0.45)))
-                }
-            }
-        }
-        .allowsHitTesting(false)
+        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) { onDrawingChanged() }
     }
 }
 
@@ -89,77 +53,86 @@ private struct StepIndicator: View {
     }
 }
 
-// MARK: - Guide Bottom Panel
+// MARK: - Region Instruction Panel
+// "지금 하늘 영역을 칠하세요" + 팁 + 팔레트
 
-private struct GuideBottomPanel: View {
+private struct RegionInstructionPanel: View {
     let guide: RegionGuide
-    @Binding var currentColor: UIColor
-    @State private var selectedHex: String = ""
+    @Binding var selectedHex: String
+    let onColorSelected: (UIColor) -> Void
+    @State private var tipIndex = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(guide.region.label.rawValue.capitalized, systemImage: labelIcon(guide.region.label))
-                    .font(.headline.bold())
+        VStack(alignment: .leading, spacing: 10) {
+            // 영역 안내 문구
+            HStack(spacing: 8) {
+                Image(systemName: regionIcon(guide.region.label))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.yellow)
+                Text("지금 \(regionKoreanName(guide.region.label)) 영역을 칠하세요")
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
-                Spacer()
-                Text(guide.recipe.brush.type)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.15))
-                    .cornerRadius(6)
             }
 
+            // 스트로크 힌트
             Text(guide.strokeHints.description)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.75))
                 .lineLimit(2)
 
-            // 팔레트
-            HStack(spacing: 10) {
-                ForEach(guide.recipe.palette) { color in
-                    Button {
-                        currentColor = color.uiColor
-                        selectedHex = color.hex
-                    } label: {
-                        Circle()
-                            .fill(Color(uiColor: color.uiColor))
-                            .frame(width: 38, height: 38)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(
-                                        selectedHex == color.hex ? Color.white : Color.clear,
-                                        lineWidth: 2.5
-                                    )
-                            )
-                            .shadow(color: .black.opacity(0.3), radius: 2)
-                    }
+            // 팁 (있을 경우)
+            if !guide.recipe.tips.isEmpty {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption2)
+                        .foregroundColor(.yellow.opacity(0.8))
+                    Text(guide.recipe.tips[tipIndex % guide.recipe.tips.count])
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.65))
+                        .lineLimit(2)
                 }
+                .onTapGesture { tipIndex += 1 }  // 탭하면 다음 팁
+            }
+
+            Divider().background(Color.white.opacity(0.2))
+
+            // 팔레트
+            HStack {
+                PaletteView(
+                    palette: guide.recipe.palette,
+                    selectedHex: $selectedHex,
+                    onColorSelected: onColorSelected
+                )
+                Spacer()
+                // 브러시 타입 배지
+                Text(guide.recipe.brush.type)
+                    .font(.caption2.weight(.medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.12))
+                    .cornerRadius(6)
             }
         }
         .padding(16)
         .background(.ultraThinMaterial)
-        .cornerRadius(16)
+        .cornerRadius(18)
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
-        .onAppear {
-            // 첫 번째 색상을 기본 선택으로
-            if let first = guide.recipe.palette.first {
-                selectedHex = first.hex
-                currentColor = first.uiColor
-            }
-        }
-        .onChange(of: guide.id) { _ in
-            if let first = guide.recipe.palette.first {
-                selectedHex = first.hex
-                currentColor = first.uiColor
-            }
+    }
+
+    private func regionKoreanName(_ label: RegionLabel) -> String {
+        switch label {
+        case .sky:        return "하늘"
+        case .water:      return "물"
+        case .vegetation: return "식물"
+        case .flower:     return "꽃"
+        case .ground:     return "지면"
+        case .background: return "배경"
         }
     }
 
-    private func labelIcon(_ label: RegionLabel) -> String {
+    private func regionIcon(_ label: RegionLabel) -> String {
         switch label {
         case .sky:        return "cloud.fill"
         case .water:      return "drop.fill"
@@ -168,6 +141,31 @@ private struct GuideBottomPanel: View {
         case .ground:     return "mountain.2.fill"
         case .background: return "square.fill"
         }
+    }
+}
+
+// MARK: - Region Progress Ring
+
+private struct RegionProgressRing: View {
+    let progress: Float   // 0.0 ~ 1.0
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.2), lineWidth: 3)
+            Circle()
+                .trim(from: 0, to: CGFloat(progress))
+                .stroke(
+                    progress >= 0.7 ? Color.green : Color.yellow,
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 0.3), value: progress)
+            Text("\(Int(progress * 100))%")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .frame(width: 36, height: 36)
     }
 }
 
@@ -197,13 +195,14 @@ private struct CompletionOverlay: View {
 
 struct CanvasView: View {
     @ObservedObject var session: PaintingSessionViewModel
+    @State private var selectedHex: String = ""
 
     var body: some View {
         ZStack {
             // 캔버스 배경색
             canvasBackground
 
-            // Layer 1: 원본 사진 (반투명 참고용)
+            // Layer 1: 원본 사진 참고용 (반투명)
             if session.showReference {
                 Image(uiImage: session.originalPhoto)
                     .resizable()
@@ -221,11 +220,12 @@ struct CanvasView: View {
                 onDrawingChanged: { session.updateProgress() }
             )
 
-            // Layer 3: Region 가이드 오버레이
-            RegionMaskOverlay(
+            // Layer 3: 가이드 오버레이 (스트로크 힌트 포함)
+            GuideOverlayView(
                 regions: session.paintingGuide.regionGuides.map { $0.region },
                 activeRegionId: session.currentRegionGuide?.id,
-                imageSize: session.originalPhoto.size
+                imageSize: session.originalPhoto.size,
+                strokeHints: session.currentStrokeHints
             )
 
             // Layer 4: UI
@@ -233,13 +233,28 @@ struct CanvasView: View {
                 topBar
                 Spacer()
                 if let guide = session.currentRegionGuide {
-                    GuideBottomPanel(guide: guide, currentColor: $session.currentColor)
+                    RegionInstructionPanel(
+                        guide: guide,
+                        selectedHex: $selectedHex,
+                        onColorSelected: { session.currentColor = $0 }
+                    )
                 }
             }
         }
         .ignoresSafeArea()
         .overlay {
             if session.isSessionComplete { CompletionOverlay() }
+        }
+        .onAppear {
+            // 첫 region의 기본 색상 초기화
+            if let first = session.currentRegionGuide?.recipe.palette.first {
+                selectedHex = first.hex
+            }
+        }
+        .onChange(of: session.currentRegionGuide?.id) { _ in
+            if let first = session.currentRegionGuide?.recipe.palette.first {
+                selectedHex = first.hex
+            }
         }
     }
 
@@ -255,18 +270,26 @@ struct CanvasView: View {
     }
 
     private var topBar: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 0) {
             StepIndicator(currentStep: session.currentStep)
+
             Spacer()
+
+            // 현재 region 진행률 링
+            if let guide = session.currentRegionGuide {
+                let progress = session.regionProgress[guide.id] ?? 0
+                RegionProgressRing(progress: progress)
+                    .padding(.trailing, 10)
+            }
 
             // 참고 사진 토글
             Button {
                 session.showReference.toggle()
             } label: {
                 Image(systemName: session.showReference ? "eye.fill" : "eye.slash.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 17))
                     .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .background(Color.black.opacity(0.4))
                     .clipShape(Circle())
             }
