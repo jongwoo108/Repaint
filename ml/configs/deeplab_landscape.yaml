@@ -1,0 +1,51 @@
+model:
+  backbone: resnet101
+  pretrained: imagenet
+  num_classes: 6  # background + 5 landscape classes
+
+data:
+  base_dataset: ADE20K
+  data_dir: ml/data/ade20k
+  class_mapping:
+    sky: [2]
+    water: [21, 26, 60]          # water, sea, river
+    vegetation: [4, 9, 17, 72]   # tree, grass, plant, palm
+    flower: [66]                 # flower (ADE20K idx 66)
+    ground: [3, 6, 13, 16, 29, 34, 46, 52, 68]  # floor, road, earth, mountain, field, rock, sand, path, hill
+  input_size: 513
+
+  augmentation:
+    - HorizontalFlip(p=0.5)
+    - RandomBrightnessContrast(p=0.3)
+    - ColorJitter(brightness=0.2, contrast=0.2, saturation=0.3)
+    - GaussianBlur(blur_limit=3, p=0.1)
+
+training:
+  epochs: 30
+  batch_size: 8
+  optimizer: AdamW
+  learning_rate: 1.0e-4
+  scheduler: CosineAnnealingLR
+  loss: CrossEntropyLoss
+  class_weights:
+    background: 1.0
+    sky: 1.0
+    water: 1.5
+    vegetation: 1.5
+    flower: 3.0   # 작은 영역 upweight
+    ground: 1.5
+
+evaluation:
+  target_metrics:
+    sky_miou: 0.85
+    water_miou: 0.75
+    vegetation_miou: 0.70
+    flower_miou: 0.55
+    ground_miou: 0.65
+    overall_miou: 0.70
+  coreml_latency_ms: 500   # iPad Pro M2 기준 최대
+  model_size_mb: 100
+
+output:
+  checkpoint_dir: ml/checkpoints
+  mlpackage_path: ios/Repaint/Resources/DeepLabV3.mlpackage

@@ -1,0 +1,47 @@
+# ===== iOS / Xcode =====
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+.build/
+
+# CoreML 모델 (용량 큼 — 별도 관리)
+*.mlpackage/
+*.mlmodel
+
+# ===== Python / ML =====
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+.env
+*.egg-info/
+dist/
+.pytest_cache/
+
+# ML 체크포인트 / 데이터셋 (용량 큼)
+ml/checkpoints/
+ml/data/ade20k/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== Claude Code =====
+.claude/
+
+# ===== Docker =====
+server/checkpoints/

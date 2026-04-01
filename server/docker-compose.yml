@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./recipes:/app/recipes
+      - ./checkpoints:/app/checkpoints
+    environment:
+      - PYTHONUNBUFFERED=1
+      # fine-tuned 체크포인트가 있을 때만 설정. 없으면 SegFormer ADE20K PoC 모드로 동작.
+      # - DEEPLAB_CHECKPOINT=/app/checkpoints/deeplab_landscape.pth
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

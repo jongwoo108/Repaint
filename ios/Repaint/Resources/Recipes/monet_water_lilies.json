@@ -1,0 +1,155 @@
+{
+  "style_id": "monet_water_lilies",
+  "style_name": "Monet — Water Lilies",
+  "description": "Impressionist landscape with soft, layered brushwork",
+  "canvas_settings": {
+    "background_color": "#F5F0E8",
+    "suggested_canvas_size": { "width": 2048, "height": 1536 }
+  },
+  "painting_order": ["background", "midground", "foreground", "finish"],
+  "region_recipes": {
+    "sky": {
+      "layer": "background",
+      "palette": [
+        { "hex": "#B8C9E0", "name": "Pale blue", "usage": "Base wash" },
+        { "hex": "#D4A8C7", "name": "Lavender pink", "usage": "Cloud highlights" },
+        { "hex": "#E8D5B7", "name": "Warm cream", "usage": "Horizon glow" },
+        { "hex": "#9BAFC4", "name": "Steel blue", "usage": "Upper sky depth" }
+      ],
+      "brush": {
+        "type": "watercolor",
+        "size_range": { "min": 20, "max": 60 },
+        "opacity": 0.4
+      },
+      "stroke_guide": {
+        "direction": "horizontal",
+        "pattern": "long_sweeping",
+        "description": "Wide horizontal strokes, overlapping. Start light, layer darker."
+      },
+      "tips": [
+        "Start with the lightest color as a base wash",
+        "Add depth with slightly darker tones at the top",
+        "Leave some canvas showing through for luminosity"
+      ]
+    },
+    "water": {
+      "layer": "background",
+      "palette": [
+        { "hex": "#4A7B6F", "name": "Deep teal", "usage": "Water base" },
+        { "hex": "#6B9E8A", "name": "Sage green", "usage": "Mid-tone reflections" },
+        { "hex": "#8FBCAA", "name": "Light aqua", "usage": "Surface shimmer" },
+        { "hex": "#3D5E54", "name": "Dark green", "usage": "Depth shadows" }
+      ],
+      "brush": {
+        "type": "watercolor",
+        "size_range": { "min": 15, "max": 45 },
+        "opacity": 0.5
+      },
+      "stroke_guide": {
+        "direction": "horizontal",
+        "pattern": "short_dabs",
+        "description": "Short horizontal dabs with varying pressure. Mirror sky colors faintly."
+      },
+      "tips": [
+        "Horizontal strokes only — water is flat",
+        "Reflect sky colors at ~30% intensity",
+        "Dark areas suggest depth, light areas suggest reflection"
+      ]
+    },
+    "vegetation": {
+      "layer": "midground",
+      "palette": [
+        { "hex": "#3B6B35", "name": "Forest green", "usage": "Base foliage" },
+        { "hex": "#5A8F4E", "name": "Leaf green", "usage": "Sunlit areas" },
+        { "hex": "#2D4F28", "name": "Shadow green", "usage": "Depth in foliage" },
+        { "hex": "#7AB648", "name": "Bright lime", "usage": "Highlight touches" }
+      ],
+      "brush": {
+        "type": "marker",
+        "size_range": { "min": 10, "max": 30 },
+        "opacity": 0.6
+      },
+      "stroke_guide": {
+        "direction": "varied",
+        "pattern": "stipple_cluster",
+        "description": "Clusters of small marks suggesting leaf groupings. Vary pressure for organic feel."
+      },
+      "tips": [
+        "Build up in layers: dark base, then lighter on top",
+        "Cluster marks — don't try to paint individual leaves",
+        "Leave gaps between clusters for depth"
+      ]
+    },
+    "flower": {
+      "layer": "foreground",
+      "palette": [
+        { "hex": "#E8A5C8", "name": "Rose pink", "usage": "Petal base" },
+        { "hex": "#F2D4E0", "name": "Soft pink", "usage": "Petal highlights" },
+        { "hex": "#C74B8B", "name": "Deep magenta", "usage": "Petal shadows" },
+        { "hex": "#F5E6A3", "name": "Warm yellow", "usage": "Center/stamen" }
+      ],
+      "brush": {
+        "type": "pen",
+        "size_range": { "min": 5, "max": 15 },
+        "opacity": 0.8
+      },
+      "stroke_guide": {
+        "direction": "radial",
+        "pattern": "circular_dabs",
+        "description": "Small circular dabs radiating from center. Pure color, minimal mixing."
+      },
+      "tips": [
+        "Use pure, unmixed colors — impressionist purity",
+        "Each dab is a petal. Don't overblend.",
+        "Add yellow center last as a bright accent"
+      ]
+    },
+    "ground": {
+      "layer": "midground",
+      "palette": [
+        { "hex": "#8B7355", "name": "Earth brown", "usage": "Ground base" },
+        { "hex": "#A69070", "name": "Sand", "usage": "Light areas" },
+        { "hex": "#6B5540", "name": "Dark earth", "usage": "Shadow/depth" },
+        { "hex": "#7A8B5A", "name": "Moss green", "usage": "Grass patches" }
+      ],
+      "brush": {
+        "type": "watercolor",
+        "size_range": { "min": 15, "max": 40 },
+        "opacity": 0.5
+      },
+      "stroke_guide": {
+        "direction": "horizontal",
+        "pattern": "varied_wash",
+        "description": "Horizontal washes with earth tones. Add texture with small vertical dabs."
+      },
+      "tips": [
+        "Ground anchors the scene — keep it darker near bottom",
+        "Blend into water/vegetation edges softly",
+        "Add moss green dabs where ground meets plants"
+      ]
+    }
+  },
+  "finish_pass": {
+    "description": "Final enhancement pass after all regions complete",
+    "steps": [
+      {
+        "name": "Highlight sparkle",
+        "palette": [{ "hex": "#FFFFFF", "name": "Pure white" }],
+        "brush": { "type": "pen", "size_range": { "min": 2, "max": 5 }, "opacity": 0.9 },
+        "instruction": "Add tiny white dots on water surface for light reflection"
+      },
+      {
+        "name": "Shadow anchoring",
+        "palette": [{ "hex": "#2A3A2E", "name": "Dark shadow" }],
+        "brush": { "type": "watercolor", "size_range": { "min": 10, "max": 20 }, "opacity": 0.3 },
+        "instruction": "Deepen shadows under flowers and at water edges"
+      },
+      {
+        "name": "Atmospheric blend",
+        "palette": [{ "hex": "#D4C4A8", "name": "Warm haze" }],
+        "brush": { "type": "watercolor", "size_range": { "min": 40, "max": 80 }, "opacity": 0.1 },
+        "instruction": "Very light warm wash over entire painting to unify colors"
+      }
+    ]
+  }
+}
